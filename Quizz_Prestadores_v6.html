@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Prestadores JS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --conecta:#b688ea; --conecta-dark:#966fd1;
+            --impulsa:#00554e; --impulsa-light:#007a72;
+            --elite:#4a537d; --elite-light:#6a73a1;
+            --white:#ffffff; --bg:#f4f7f9;
+            --danger:#e74c3c; --success:#28a745; --text:#2c3e50;
+            --pass:#1a7f3c; --fail:#c0392b;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif;}
+        body{background:linear-gradient(135deg,#f4f7f9 0%,#e9edf2 100%);color:var(--text);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:10px;}
+        .container{background:var(--white);width:100%;max-width:700px;border-radius:30px;box-shadow:0 20px 40px rgba(0,0,0,0.08);padding:25px;position:relative;min-height:600px;display:flex;flex-direction:column;border-top:10px solid var(--impulsa);margin:10px auto;}
+        @media(min-width:768px){.container{padding:45px;}}
+        .screen{display:none;flex-direction:column;}
+        .screen.active{display:flex;animation:fadeIn 0.4s ease-out;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+        h1{color:var(--impulsa);font-weight:800;font-size:1.6rem;text-align:center;margin-bottom:5px;}
+        .subtitle{text-align:center;margin-bottom:25px;color:var(--elite);font-weight:600;font-size:0.9rem;}
+        input[type="text"],input[type="password"],textarea{width:100%;padding:16px;border:2px solid #e1e8ed;border-radius:15px;margin-bottom:15px;font-size:1rem;outline:none;transition:0.3s;}
+        input:focus,textarea:focus{border-color:var(--conecta);box-shadow:0 0 0 4px rgba(182,136,234,0.1);}
+        button{width:100%;padding:16px;border:none;border-radius:18px;cursor:pointer;font-weight:700;font-size:1rem;transition:0.3s;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;}
+        .btn-primary{background:var(--conecta);color:white;box-shadow:0 4px 15px rgba(182,136,234,0.3);}
+        .btn-primary:hover{background:var(--conecta-dark);transform:translateY(-2px);}
+        .btn-outline{background:transparent;border:2px solid var(--elite);color:var(--elite);}
+        .btn-outline:hover{background:var(--elite);color:white;}
+        .btn-green{background:var(--impulsa);color:white;}
+        .btn-green:hover{background:var(--impulsa-light);}
+        .btn-admin{background:transparent;color:#a1b0b9;margin-top:auto;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;}
+        .btn-sm{width:auto;padding:10px 18px;font-size:0.8rem;margin:0;}
+        .btn-danger{background:#fdeaea;color:var(--danger);border:1px solid #f5c6c6;}
+        .btn-success{background:#e8f5e9;color:var(--success);border:1px solid #c8e6c9;}
+        .btn-mail{background:linear-gradient(135deg,#0078d4,#005a9e);color:white;font-size:1rem;padding:18px;border-radius:18px;box-shadow:0 4px 15px rgba(0,120,212,0.3);}
+        .btn-mail:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,120,212,0.4);}
+
+        /* QUIZ */
+        .quiz-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+        #timer{font-weight:800;color:var(--impulsa);font-size:1.1rem;background:#e0f2f1;padding:6px 14px;border-radius:12px;}
+        #progress{font-weight:700;color:var(--elite-light);font-size:0.85rem;}
+        .racha-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:28px;}
+        .racha-label{font-size:0.7rem;font-weight:700;color:#aaa;text-transform:uppercase;}
+        .racha-fires{display:flex;gap:3px;}
+        .fire{font-size:1.3rem;animation:popIn 0.3s ease-out;}
+        @keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+        .racha-count{font-size:0.75rem;font-weight:800;color:#e67e22;background:#fff3e0;padding:2px 8px;border-radius:8px;display:none;}
+        .racha-count.visible{display:block;}
+        .progress-bar-wrap{background:#edf2f7;border-radius:10px;height:8px;margin-bottom:18px;overflow:hidden;}
+        .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--impulsa),var(--conecta));border-radius:10px;transition:width 0.5s ease;}
+        .option{background:#fff;border:2px solid #edf2f7;padding:16px;border-radius:15px;margin-bottom:12px;cursor:pointer;transition:0.2s;font-weight:600;font-size:0.95rem;color:var(--text);display:flex;align-items:center;gap:10px;}
+        .option:hover{border-color:var(--conecta);background:#fdfbff;transform:translateX(8px);}
+        .option.correct{background:#dff6e8!important;border-color:var(--success)!important;color:#1b5e20;}
+        .option.wrong{background:#fdeaea!important;border-color:var(--danger)!important;color:#7f1d1d;animation:shake 0.4s;}
+        .option-letter{width:28px;height:28px;border-radius:8px;background:#f0f4f8;font-size:0.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--elite);}
+        .option.correct .option-letter{background:var(--success);color:white;}
+        .option.wrong .option-letter{background:var(--danger);color:white;}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+        .explanation{background:#f8f0ff;padding:20px;border-radius:15px;margin-top:15px;border-left:6px solid var(--conecta);display:none;font-size:0.9rem;line-height:1.5;color:#5d468e;}
+
+        /* RESULTADO */
+        .result-breakdown{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+        .result-stat{flex:1;min-width:70px;background:var(--bg);border-radius:16px;padding:12px 8px;text-align:center;}
+        .result-stat .rs-val{font-size:1.5rem;font-weight:800;}
+        .result-stat .rs-lbl{font-size:0.6rem;font-weight:700;color:#aaa;text-transform:uppercase;margin-top:2px;}
+        .rs-score .rs-val{color:var(--conecta);}
+        .rs-correct .rs-val{color:var(--success);}
+        .rs-wrong .rs-val{color:var(--danger);}
+        .rs-streak .rs-val{color:#e67e22;}
+        .verdict-banner{padding:16px 20px;border-radius:18px;text-align:center;margin-bottom:16px;}
+        .verdict-banner.aprobado{background:#e8f5e9;border:2px solid var(--success);color:var(--pass);}
+        .verdict-banner.desaprobado{background:#fdeaea;border:2px solid var(--danger);color:var(--fail);}
+        .verdict-banner .verd-title{font-size:1.4rem;font-weight:800;}
+        .verdict-banner .verd-sub{font-size:0.8rem;font-weight:600;margin-top:4px;opacity:0.85;}
+
+        /* ENVIO MAIL */
+        .mail-box{background:linear-gradient(135deg,#e8f4fd,#d0e9f9);border:2px solid #90caf9;border-radius:20px;padding:20px;margin-bottom:14px;}
+        .mail-box h3{color:#0d47a1;font-size:1rem;margin-bottom:6px;}
+        .mail-box p{font-size:0.8rem;color:#1565c0;line-height:1.5;margin-bottom:12px;}
+        .mail-sent-badge{background:#e8f5e9;border:2px solid var(--success);border-radius:14px;padding:12px 16px;text-align:center;font-size:0.85rem;font-weight:700;color:var(--pass);display:none;}
+
+        /* REVISIÓN */
+        .review-item{border:2px solid #edf2f7;border-radius:16px;padding:16px;margin-bottom:14px;}
+        .review-item.rev-correct{border-color:var(--success);background:#f5fff8;}
+        .review-item.rev-wrong{border-color:var(--danger);background:#fff5f5;}
+        .review-q-num{font-size:0.7rem;font-weight:800;text-transform:uppercase;margin-bottom:6px;}
+        .rev-correct .review-q-num{color:var(--success);}
+        .rev-wrong .review-q-num{color:var(--danger);}
+        .review-q-text{font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.4;}
+        .review-answer{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:10px;font-size:0.85rem;font-weight:600;margin-bottom:6px;}
+        .review-answer.user-right{background:#dff6e8;color:#1b5e20;}
+        .review-answer.user-wrong{background:#fdeaea;color:#7f1d1d;}
+        .review-answer.correct-ans{background:#e8f0ff;color:#1a3a8f;}
+        .review-exp{font-size:0.78rem;color:#5d468e;background:#f8f0ff;padding:10px 12px;border-radius:10px;margin-top:8px;line-height:1.5;border-left:4px solid var(--conecta);}
+
+        /* ADMIN */
+        .admin-tabs{display:flex;gap:6px;margin-bottom:15px;flex-wrap:wrap;}
+        .admin-tab-btn{flex:1;min-width:80px;padding:10px 8px;border-radius:12px;font-size:0.72rem;font-weight:700;border:2px solid #e1e8ed;background:white;color:var(--elite);cursor:pointer;transition:0.2s;margin:0;}
+        .admin-tab-btn.active{background:var(--elite);color:white;border-color:var(--elite);}
+        .ranking-table{width:100%;border-collapse:collapse;background:white;font-size:0.78rem;}
+        .ranking-table th{background:var(--elite);color:white;position:sticky;top:0;z-index:10;}
+        .ranking-table th,.ranking-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #edf2f7;}
+        .ranking-table tr:nth-child(even){background:#fcfdfe;}
+        .badge-pass{background:#dff6e8;color:var(--pass);padding:2px 8px;border-radius:6px;font-size:0.7rem;font-weight:800;}
+        .badge-fail{background:#fdeaea;color:var(--fail);padding:2px 8px;border-radius:6px;font-size:0.7rem;font-weight:800;}
+        .scroll-area{max-height:420px;overflow-y:auto;border:1px solid #e1e8ed;border-radius:15px;background:#fff;}
+        .q-edit-item{border:1px solid #edf2f7;padding:18px;border-radius:15px;margin-bottom:15px;background:#fcfdfe;}
+        .options-editor{display:flex;flex-direction:column;gap:6px;margin:8px 0 4px;}
+        .option-edit-row{display:flex;align-items:center;gap:8px;}
+        .option-edit-row input[type="text"]{flex:1;padding:10px 14px;margin-bottom:0;font-size:0.85rem;border-radius:10px;border:2px solid #e1e8ed;}
+        .option-edit-row .correct-btn{width:36px;height:36px;border-radius:10px;border:2px solid #ddd;background:white;cursor:pointer;font-size:1rem;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;margin:0;transition:0.2s;}
+        .option-edit-row .correct-btn.active{background:#e8f5e9;border-color:var(--success);}
+        .option-edit-row.is-correct input[type="text"]{border-color:var(--success);background:#f0fff4;}
+        .options-edit-label{font-size:0.75rem;font-weight:700;color:var(--elite);margin-bottom:2px;display:flex;justify-content:space-between;}
+        .options-edit-label span{font-size:0.7rem;color:#a1b0b9;font-weight:600;}
+        .admin-edit-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+        .editor-meta{font-size:0.75rem;color:#aaa;font-weight:600;padding:8px 12px;background:#f8fafc;border-radius:10px;margin-bottom:8px;text-align:center;}
+
+        /* IMPORTADOR */
+        .import-box{background:#f8fafc;border:2px dashed #c5d0e0;border-radius:20px;padding:20px;margin-bottom:14px;}
+        .import-box h3{font-size:0.95rem;color:var(--elite);margin-bottom:8px;}
+        .import-box p{font-size:0.78rem;color:#6b7c8f;margin-bottom:10px;line-height:1.5;}
+        .import-box textarea{height:100px;font-size:0.78rem;font-family:monospace;}
+
+        /* OVERLAY DETALLE */
+        .attempt-detail-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:15px;}
+        .attempt-detail-box{background:white;border-radius:24px;padding:28px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 30px 60px rgba(0,0,0,0.2);}
+        .close-detail-btn{background:#f0f4f8;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;margin:0;}
+
+        /* PDF PRINT */
+        @media print {
+            body{background:white;padding:0;}
+            .container{box-shadow:none;border-radius:0;border-top:none;max-width:100%;margin:0;padding:20px;}
+            .no-print{display:none!important;}
+            .print-only{display:block!important;}
+            .review-item{break-inside:avoid;}
+        }
+        .print-only{display:none;}
+
+        /* TOAST */
+        .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2c3e50;color:white;padding:12px 24px;border-radius:14px;font-size:0.85rem;font-weight:700;z-index:2000;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+        .toast.show{opacity:1;}
+
+        ::-webkit-scrollbar{width:6px;}
+        ::-webkit-scrollbar-track{background:#f1f1f1;}
+        ::-webkit-scrollbar-thumb{background:#ccc;border-radius:10px;}
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- LOGIN -->
+    <div id="login-screen" class="screen active">
+        <div style="text-align:center;margin-bottom:20px;">
+            <img src="https://cdn-icons-png.flaticon.com/512/3407/3407024.png" width="60" style="margin-bottom:15px;">
+            <h1>Examen de Prestadores</h1>
+            <p class="subtitle">Jerárquicos Salud — Ingresá tu nombre y apellido</p>
+        </div>
+        <input type="text" id="user-name" placeholder="Nombre y Apellido" onkeydown="if(event.key==='Enter') startQuiz()">
+        <button class="btn-primary" onclick="startQuiz()">Comenzar Examen</button>
+        <button class="btn-admin" onclick="showScreen('admin-login-screen')">Panel Administrativo</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="quiz-screen" class="screen">
+        <div class="quiz-header">
+            <div id="progress">Pregunta 1 de 26</div>
+            <div id="timer">00:00</div>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+        <div class="racha-bar">
+            <span class="racha-label">Racha</span>
+            <div class="racha-fires" id="racha-fires"></div>
+            <span class="racha-count" id="racha-count"></span>
+        </div>
+        <div id="question-container" style="flex:1">
+            <h3 id="question-text" style="margin-bottom:20px;color:var(--impulsa);line-height:1.4;font-size:1.05rem;"></h3>
+            <div id="options-container"></div>
+            <div id="explanation-box" class="explanation"></div>
+        </div>
+        <button id="next-btn" class="btn-primary" style="display:none;margin-top:20px;" onclick="nextQuestion()">Siguiente Pregunta →</button>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div id="result-screen" class="screen">
+        <h1 style="margin-bottom:12px;">Examen Finalizado</h1>
+        <div id="medal-icon" style="text-align:center;font-size:4rem;margin:10px 0;">🏆</div>
+        <div id="verdict-banner" class="verdict-banner aprobado">
+            <div class="verd-title" id="verdict-title">APROBADO ✅</div>
+            <div class="verd-sub" id="verdict-sub"></div>
+        </div>
+        <div class="result-breakdown">
+            <div class="result-stat rs-score"><div class="rs-val" id="res-score">0</div><div class="rs-lbl">Puntos</div></div>
+            <div class="result-stat"><div class="rs-val" id="res-pct" style="color:var(--conecta);">0%</div><div class="rs-lbl">Porcentaje</div></div>
+            <div class="result-stat rs-correct"><div class="rs-val" id="res-correct">0</div><div class="rs-lbl">Correctas</div></div>
+            <div class="result-stat rs-wrong"><div class="rs-val" id="res-wrong">0</div><div class="rs-lbl">Incorrectas</div></div>
+            <div class="result-stat rs-streak"><div class="rs-val" id="res-streak">0🔥</div><div class="rs-lbl">Mejor racha</div></div>
+        </div>
+
+        <!-- ENVÍO POR MAIL -->
+        <div class="mail-box">
+            <h3>📧 Enviá tu resultado</h3>
+            <p>Hacé clic en el botón para abrir Outlook con tu resultado ya cargado. Solo tenés que hacer clic en <b>Enviar</b>.</p>
+            <button class="btn-mail" onclick="enviarPorMail()">✉️ Abrir Outlook y enviar resultado</button>
+            <div class="mail-sent-badge" id="mail-sent-badge">✅ ¡Mail abierto! Recordá hacer clic en Enviar en Outlook.</div>
+        </div>
+
+        <button class="btn-outline" onclick="showReview()" style="margin-bottom:10px;">📋 Ver todas mis respuestas</button>
+        <button style="background:#f0f4f8;border:none;border-radius:18px;color:#6b7c8f;font-size:0.85rem;font-weight:700;padding:14px;cursor:pointer;margin-bottom:0;" onclick="location.reload()">Cerrar y Salir</button>
+    </div>
+
+    <!-- REVISIÓN -->
+    <div id="review-screen" class="screen">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+            <button onclick="showScreen('result-screen')" style="width:auto;padding:10px 16px;margin:0;background:#f0f4f8;border:none;border-radius:12px;font-size:0.85rem;font-weight:700;color:var(--elite);cursor:pointer;">← Volver</button>
+            <h1 style="font-size:1.2rem;flex:1;text-align:left;">Revisión de Respuestas</h1>
+        </div>
+        <div id="review-summary" style="background:var(--bg);padding:14px 18px;border-radius:14px;margin-bottom:16px;font-size:0.85rem;font-weight:600;color:var(--elite);"></div>
+        <div id="review-list"></div>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div id="admin-login-screen" class="screen">
+        <h1>Acceso Admin</h1>
+        <input type="password" id="admin-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter') loginAdmin()">
+        <button class="btn-primary" onclick="loginAdmin()">Entrar</button>
+        <button class="btn-outline" onclick="showScreen('login-screen')">Volver</button>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel-screen" class="screen">
+        <h1 style="margin-bottom:14px;">Panel de Control</h1>
+        <div class="admin-tabs">
+            <button class="admin-tab-btn active" id="tab-btn-resultados" onclick="switchAdminTab('resultados')">📊 Resultados</button>
+            <button class="admin-tab-btn" id="tab-btn-detalle" onclick="switchAdminTab('detalle')">🔍 Detalle</button>
+            <button class="admin-tab-btn" id="tab-btn-importar" onclick="switchAdminTab('importar')">📥 Importar</button>
+            <button class="admin-tab-btn" id="tab-btn-edit" onclick="switchAdminTab('edit')">✏️ Preguntas</button>
+        </div>
+
+        <!-- TAB RESULTADOS -->
+        <div id="admin-resultados" class="tab-content">
+            <div class="scroll-area">
+                <table class="ranking-table">
+                    <thead><tr><th>Nombre</th><th>Pts</th><th>%</th><th>Tiempo</th><th>Fecha</th><th>Estado</th></tr></thead>
+                    <tbody id="ranking-body"></tbody>
+                </table>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
+                <button class="btn-sm btn-green" onclick="exportCSV()">📥 Exportar CSV</button>
+                <button class="btn-sm" style="background:var(--conecta);color:white;" onclick="exportPDF()">📄 Exportar PDF</button>
+                <button class="btn-sm btn-danger" onclick="clearAll()">🗑️ Limpiar todo</button>
+            </div>
+        </div>
+
+        <!-- TAB DETALLE -->
+        <div id="admin-detalle" class="tab-content" style="display:none;">
+            <p style="font-size:0.8rem;color:#aaa;font-weight:600;text-align:center;margin-bottom:12px;">Hacé clic en un nombre para ver el detalle completo</p>
+            <div id="detail-list" class="scroll-area" style="padding:10px;"></div>
+        </div>
+
+        <!-- TAB IMPORTAR -->
+        <div id="admin-importar" class="tab-content" style="display:none;">
+            <div class="import-box">
+                <h3>📧 Importar resultado desde mail</h3>
+                <p>Cuando recibas un mail de un auxiliar, copiá todo el contenido del mail y pegalo acá abajo. El sistema lo va a leer y agregar al panel automáticamente.</p>
+                <textarea id="import-textarea" placeholder="Pegá el contenido del mail acá..."></textarea>
+                <button class="btn-green btn-sm" style="width:100%;margin-top:8px;" onclick="importarMail()">✅ Importar resultado</button>
+            </div>
+            <div id="import-feedback" style="display:none;padding:14px;border-radius:14px;font-size:0.85rem;font-weight:700;text-align:center;margin-top:8px;"></div>
+        </div>
+
+        <!-- TAB PREGUNTAS -->
+        <div id="admin-edit" class="tab-content" style="display:none;">
+            <div id="editor-meta" class="editor-meta"></div>
+            <div class="scroll-area" id="questions-editor-list" style="padding:10px;"></div>
+            <div class="admin-edit-actions">
+                <button class="btn-primary btn-sm" onclick="saveQuestionsLocal()">💾 Guardar preguntas</button>
+                <button class="btn-success btn-sm" onclick="addQuestion()">＋ Nueva</button>
+                <button class="btn-danger btn-sm" onclick="resetQuestions()">↺ Restaurar</button>
+                <button class="btn-sm" style="background:var(--conecta);color:white;" onclick="downloadUpdatedHTML()">⬇️ Descargar HTML actualizado</button>
+            </div>
+        </div>
+
+        <button class="btn-admin" onclick="showScreen('login-screen')">Cerrar Sesión</button>
+    </div>
+</div>
+
+<!-- OVERLAY DETALLE INTENTO -->
+<div id="attempt-detail-overlay" class="attempt-detail-overlay" style="display:none;">
+    <div class="attempt-detail-box">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:10px;">
+            <div>
+                <h2 id="detail-overlay-name" style="font-size:1.1rem;color:var(--impulsa);font-weight:800;"></h2>
+                <div id="detail-overlay-meta" style="font-size:0.78rem;color:#aaa;font-weight:600;margin-top:4px;"></div>
+            </div>
+            <button class="close-detail-btn" onclick="closeDetailOverlay()">✕</button>
+        </div>
+        <div id="detail-overlay-content"></div>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;" class="no-print">
+            <button class="btn-sm btn-green" onclick="printDetail()">🖨️ Imprimir / Guardar PDF</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const ADMIN_MAIL  = 'mecortella@jerarquicos.com';
+    const MAX_SCORE   = 260;
+    const PASS_PCT    = 80;
+    const PASS_SCORE  = Math.round(MAX_SCORE * PASS_PCT / 100);
+    const ADMIN_PASS  = 'js2026';
+    const STORAGE_KEY = 'js_exam_v6_results';
+    const STORAGE_Q   = 'js_exam_v6_questions';
+    const LETTERS     = ['A','B','C','D'];
+
+    // ── Preguntas ──────────────────────────────────────────
+    const initialQuestions = [
+        {q:"¿Cómo se denomina el acuerdo entre JS y una empresa o institución (Clínicas, Sanatorios, Federaciones)?",options:["Convenio Directo","Convenio","Facturación Directa"],correct:1,exp:"Manual Pág 4: El 'Convenio' nuclea distintos prestadores a través de una entidad reguladora."},
+        {q:"¿Cuál es el plazo máximo (reloj) para que un prestador envíe documentación faltante en una negociación?",options:["10 días","30 días","20 días"],correct:2,exp:"Manual Pág 6: Se deben tener en cuenta los 20 días de plazo en el estado 'Reclamo de documentación'."},
+        {q:"¿Qué debe hacer el prestador si necesita salvar un error en el cuerpo de una factura manual?",options:["Usar corrector","Escribir 'DIGO' y detallar texto correcto","Tachar y firmar al lado"],correct:1,exp:"Manual Pág 36: Se debe escribir textualmente DIGO (detallar texto correcto) con firma y sello."},
+        {q:"¿Cuál es el plazo máximo de presentación de facturación para que no sea considerada extemporánea?",options:["30 días","60 días","90 días"],correct:1,exp:"Manual Pág 19: El prestador tiene 60 días corridos de plazo para la presentación."},
+        {q:"Si una Mesa de Entrada (ME) figura en COLOR ROJO en Nativo, ¿qué nos indica?",options:["Urgente","La ME fue dada de baja","Ya fue pagada"],correct:1,exp:"Manual Pág 21: Las Mesa de Entradas dadas de baja se identifican de color rojo."},
+        {q:"¿A quién se debe consultar SIEMPRE antes de confirmar una refacturación de farmacia?",options:["Gapyc","Mesa de Entrada","Luz Vega (Liquidaciones Farmacia)"],correct:2,exp:"Manual Pág 24: Nunca se confirma una refacturación de farmacia sin autorización de Luz Vega."},
+        {q:"¿Cuál es el CUIT de la Mutual Jerárquicos (AMPJBON) para confeccionar facturas?",options:["33-71018560-9","30-68695518-0","30-65551888-0"],correct:1,exp:"Manual Pág 18: El CUIT correcto es 30-68695518-0."},
+        {q:"¿Cuál es el título que debe llevar obligatoriamente una prestación refacturada enviada por separado?",options:["RECLAMO","REFACTURACIÓN","DÉBITO"],correct:1,exp:"Manual Pág 23: Debe identificarse claramente con el título REFACTURACIÓN."},
+        {q:"En la modalidad GPO FULL, ¿cuánto tiempo demora el pago desde la fecha de ingreso original?",options:["15 días","30 días","45 días"],correct:0,exp:"Manual Pág 47: En GPO FULL se efectúa el pago en 15 días desde la fecha de ingreso original."},
+        {q:"En GPO PRESTACIONES (Círculos o Colegios), ¿el profesional puede visualizar el valor de cada código?",options:["Sí","Solo si está liquidado","No, el valor solo lo ve el convenio nucleador"],correct:2,exp:"Manual Pág 49: En esta modalidad, el profesional no puede visualizar el valor."},
+        {q:"¿Qué dato es OBLIGATORIO para que un reclamo CyR pueda ser finalizado conforme?",options:["Email","Teléfono de contacto","Nro de Legajo"],correct:1,exp:"Manual Pág 56: Es OBLIGATORIO tomar teléfono de contacto para brindar una respuesta."},
+        {q:"Para profesionales nucleados en una entidad, ¿quién debe remitir el listado de ABM para actualizar domicilios?",options:["El profesional directamente","El convenio que lo nuclea","El visitador médico"],correct:1,exp:"Manual Pág 11: Debe contactarse con el convenio que lo nuclea para que remita el listado de ABM."},
+        {q:"¿Qué dato debe incluir indefectiblemente toda facturación correspondiente para ser aceptada?",options:["Nro de legajo","Diagnóstico que motivó las prestaciones","Sello de Asociación"],correct:1,exp:"Manual Pág 24: Toda facturación deberá incluir indefectiblemente el diagnóstico."},
+        {q:"Si un profesional no ve el mail para firmar en Signatura Connect, ¿a qué sector debemos dar aviso?",options:["Convenios","Liquidaciones","firmaselectronicas@jerarquicos.com"],correct:2,exp:"Manual Pág 9: Se debe enviar un mail a esa casilla con los datos de contacto."},
+        {q:"Según la Res. 1743/2024, ¿cuánto demora aprox. el pago de INTEGRACIÓN (Discapacidad) desde el ingreso?",options:["30 días","45 días","60 días"],correct:2,exp:"Manual Pág 33: El pago de integración demora aproximadamente 60 días desde el ingreso."},
+        {q:"En caso de superar el plazo de 30 de procesamiento y que no esté liquidada la ME, ¿cómo procedemos?",options:["Generar reclamo G4 (demora)","Llamar a pagos","Mail a convenios"],correct:0,exp:"Manual Pág 55: Si una ME superó el tiempo de resolución, se genera reclamo G4."},
+        {q:"¿A qué organismo rinde Jerárquicos la prestación impaga en el Mecanismo de Integración?",options:["AFIP","Superintendencia de Servicios de Salud (SSS)","Ministerio de Salud"],correct:1,exp:"Manual Pág 31: Se rinde a la Superintendencia (SSS) para aprobación del subsidio."},
+        {q:"¿Qué socios NO se rinden bajo el Mecanismo de Integración (Discapacidad)?",options:["Socios con planes autónomos","Jubilados","Socios con CUD vigente"],correct:0,exp:"Manual Pág 31: No se rinden a integración los tratamientos de socios con planes autónomos."},
+        {q:"¿Con qué antelación se debe realizar la presentación para el inicio de tratamientos de discapacidad?",options:["15 días antes","60 días antes","30 días anteriores al inicio"],correct:2,exp:"Manual Pág 31: La presentación debe ser dentro de los 30 días anteriores al inicio."},
+        {q:"¿Qué debe figurar en la columna 'Resolución' de GI:8014 para saber que se derivó a la SSS?",options:["Nombre del auditor","La fecha de envío a la Super","CBU"],correct:1,exp:"Manual Pág 33: Sabremos que se derivó si figura la fecha de envío a la super."},
+        {q:"En caso de inconveniente con la plataforma GPO, ¿a qué sector debemos elevar el reclamo?",options:["Gapyc","Convenio","Herramientas Digitales"],correct:2,exp:"Manual Pág 55: Los inconvenientes técnicos con GPO o Portal Web se derivan a Herramientas Digitales."},
+        {q:"¿A qué tipo de planes debemos sumarle el 10,5% de IVA?",options:["Gravados","Re Gravados","No Gravados"],correct:0,exp:"Manual Pág 25: Se debe sumar el 10,5% de IVA en los Planes Voluntarios (Gravados)."},
+        {q:"Condición fiscal necesaria del prestador para sumar el 10,5% de IVA:",options:["Monotributo","Responsable Adherido","Responsable Inscripto"],correct:2,exp:"Manual Pág 25: Si es Responsable Inscripto, debe facturar con el 10,5% de IVA."},
+        {q:"¿Cuál es la vigencia (días para cobrar) de un cheque físico desde su emisión?",options:["15 días","30 días","60 días"],correct:1,exp:"Manual Pág 26: Tienen 30 días para cobrar; pasado ese tiempo debe devolverse."},
+        {q:"¿A qué sector se deriva un pedido de actualización de datos de un prestador SUR?",options:["Convenios","Auditoría Médica","GAPyC"],correct:2,exp:"Manual Pág 11: Los pedidos de actualización de Prestadores SUR se direccionan a GAPyC."},
+        {q:"Para un correcto asesoramiento en GPO, ¿qué debemos validar SIEMPRE antes de que el prestador cargue?",options:["CUIT","Que el socio se encuentre ACTIVO","Que la práctica sea cirugía"],correct:1,exp:"Manual Pág 46: Inicialmente se deberá validar si el socio se encuentre activo."}
+    ];
+
+    let currentUser='', currentQuestions=[], shuffledQuestions=[];
+    let currentIndex=0, score=0, correctCount=0, wrongCount=0;
+    let racha=0, mejorRacha=0;
+    let startTime, timerInterval;
+    let userAnswers=[];
+
+    // ── Storage ────────────────────────────────────────────
+    function getResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; }catch(e){return[];} }
+    function setResults(arr){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(arr)); }catch(e){} }
+
+    // ── Init ───────────────────────────────────────────────
+    function init(){
+        try{
+            const sq=localStorage.getItem(STORAGE_Q);
+            currentQuestions=sq?JSON.parse(sq):JSON.parse(JSON.stringify(initialQuestions));
+        }catch(e){ currentQuestions=JSON.parse(JSON.stringify(initialQuestions)); }
+    }
+
+    function shuffle(arr){
+        const a=[...arr];
+        for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+        return a;
+    }
+
+    function showScreen(id){
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function showToast(msg,dur=3000){
+        const t=document.getElementById('toast');
+        t.textContent=msg; t.classList.add('show');
+        setTimeout(()=>t.classList.remove('show'),dur);
+    }
+
+    // ── Quiz ───────────────────────────────────────────────
+    function startQuiz(){
+        const nameInput=document.getElementById('user-name').value.trim();
+        const authorizedUsers=["Geronimo Sovrano","Cristian Romero","Sebastian Riquelme","Maykon Maciel","Bautista Courault","Florencia Muga","Valeria Barroso","Victoria Galvez","Julieta Viña","Tatiana Antonini","Ignacio Castillo","German Perri"];
+        const found=authorizedUsers.find(u=>u.toLowerCase()===nameInput.toLowerCase());
+        if(!found){alert("Nombre no autorizado. Verificá que esté escrito correctamente.");return;}
+        currentUser=found;
+        currentIndex=0;score=0;correctCount=0;wrongCount=0;racha=0;mejorRacha=0;userAnswers=[];
+
+        shuffledQuestions=shuffle(currentQuestions).map(q=>{
+            const paired=q.options.map((opt,i)=>({text:opt,isCorrect:i===q.correct}));
+            const sp=shuffle(paired);
+            return{q:q.q,options:sp.map(p=>p.text),correct:sp.findIndex(p=>p.isCorrect),exp:q.exp};
+        });
+
+        showScreen('quiz-screen');
+        updateRachaDisplay();
+        loadQuestion();
+        startTimer();
+    }
+
+    function startTimer(){
+        startTime=Date.now();
+        timerInterval=setInterval(()=>{
+            const diff=Date.now()-startTime;
+            const m=Math.floor(diff/60000).toString().padStart(2,'0');
+            const s=Math.floor((diff%60000)/1000).toString().padStart(2,'0');
+            document.getElementById('timer').innerText=`${m}:${s}`;
+        },1000);
+    }
+
+    function loadQuestion(){
+        const q=shuffledQuestions[currentIndex];
+        const total=shuffledQuestions.length;
+        document.getElementById('progress').innerText=`Pregunta ${currentIndex+1} de ${total}`;
+        document.getElementById('progress-bar').style.width=((currentIndex/total)*100)+'%';
+        document.getElementById('question-text').innerText=q.q;
+        document.getElementById('explanation-box').style.display='none';
+        document.getElementById('next-btn').style.display='none';
+        const optDiv=document.getElementById('options-container');
+        optDiv.innerHTML='';
+        q.options.forEach((opt,i)=>{
+            const div=document.createElement('div');
+            div.className='option';
+            div.innerHTML=`<span class="option-letter">${LETTERS[i]}</span>${opt}`;
+            div.onclick=()=>selectOption(i,div);
+            optDiv.appendChild(div);
+        });
+    }
+
+    function selectOption(idx,el){
+        if(document.getElementById('next-btn').style.display==='flex') return;
+        const q=shuffledQuestions[currentIndex];
+        const all=document.querySelectorAll('.option');
+        all.forEach(o=>o.style.pointerEvents='none');
+        const isRight=idx===q.correct;
+        userAnswers.push({questionText:q.q,chosenText:q.options[idx],correctText:q.options[q.correct],isRight,exp:q.exp});
+        if(isRight){
+            el.classList.add('correct');
+            score+=10;correctCount++;racha++;
+            if(racha>mejorRacha)mejorRacha=racha;
+        }else{
+            el.classList.add('wrong');
+            setTimeout(()=>all[q.correct].classList.add('correct'),400);
+            wrongCount++;racha=0;
+        }
+        updateRachaDisplay();
+        const exp=document.getElementById('explanation-box');
+        exp.innerText=q.exp;exp.style.display='block';
+        document.getElementById('next-btn').style.display='flex';
+    }
+
+    function updateRachaDisplay(){
+        const fd=document.getElementById('racha-fires');
+        const ce=document.getElementById('racha-count');
+        fd.innerHTML='';
+        if(racha===0){ce.classList.remove('visible');return;}
+        const show=Math.min(racha,5);
+        for(let i=0;i<show;i++){const s=document.createElement('span');s.className='fire';s.textContent='🔥';fd.appendChild(s);}
+        if(racha>5){ce.textContent=`×${racha}`;ce.classList.add('visible');}
+        else ce.classList.remove('visible');
+    }
+
+    function nextQuestion(){
+        currentIndex++;
+        if(currentIndex<shuffledQuestions.length)loadQuestion();
+        else finishQuiz();
+    }
+
+    function finishQuiz(){
+        clearInterval(timerInterval);
+        const time=document.getElementById('timer').innerText;
+        const date=new Date().toLocaleString('es-AR');
+        document.getElementById('progress-bar').style.width='100%';
+
+        const pctNum=Math.round((score/MAX_SCORE)*100);
+        const passed=pctNum>=PASS_PCT;
+        const rawPct=correctCount/shuffledQuestions.length;
+        const medal=rawPct>=0.9?'🏆':rawPct>=0.7?'🥈':rawPct>=0.5?'🥉':'😅';
+        document.getElementById('medal-icon').innerText=medal;
+
+        const vb=document.getElementById('verdict-banner');
+        vb.className='verdict-banner '+(passed?'aprobado':'desaprobado');
+        document.getElementById('verdict-title').innerText=passed?'APROBADO ✅':'DESAPROBADO ❌';
+        document.getElementById('verdict-sub').innerText=passed
+            ?`Obtuviste ${pctNum}% — Mínimo requerido: ${PASS_PCT}%`
+            :`Obtuviste ${pctNum}% — Necesitás al menos ${PASS_PCT}% (${PASS_SCORE} pts de ${MAX_SCORE})`;
+
+        document.getElementById('res-score').innerText=score;
+        document.getElementById('res-pct').innerText=pctNum+'%';
+        document.getElementById('res-correct').innerText=correctCount;
+        document.getElementById('res-wrong').innerText=wrongCount;
+        document.getElementById('res-streak').innerText=mejorRacha+'🔥';
+
+        showScreen('result-screen');
+
+        // Guardar localmente también
+        const results=getResults();
+        results.push({name:currentUser,score,pct:pctNum,passed,time,date,correct:correctCount,wrong:wrongCount,streak:mejorRacha,answers:userAnswers});
+        setResults(results);
+    }
+
+    // ── ENVÍO POR MAIL ────────────────────────────────────
+    function enviarPorMail(){
+        const pctNum=Math.round((score/MAX_SCORE)*100);
+        const passed=pctNum>=PASS_PCT;
+        const time=document.getElementById('timer').innerText;
+        const date=new Date().toLocaleString('es-AR');
+
+        // Cuerpo del mail — incluye separador especial para importación
+        let detalle='';
+        userAnswers.forEach((ans,i)=>{
+            detalle+=`P${i+1}: ${ans.questionText}\n`;
+            detalle+=`   Respondió: ${ans.chosenText} ${ans.isRight?'✓':'✗'}\n`;
+            if(!ans.isRight) detalle+=`   Correcta: ${ans.correctText}\n`;
+            detalle+='\n';
+        });
+
+        // Bloque de datos estructurado para importación automática
+        const dataBlock='===RESULTADO_JS_EXAM===\n'+
+            JSON.stringify({name:currentUser,score,pct:pctNum,passed,time,date,correct:correctCount,wrong:wrongCount,streak:mejorRacha,answers:userAnswers})+
+            '\n===FIN_RESULTADO===';
+
+        const asunto=encodeURIComponent(`Examen Prestadores JS — ${currentUser} — ${passed?'APROBADO':'DESAPROBADO'} (${pctNum}%)`);
+        const cuerpo=encodeURIComponent(
+`Examen de Prestadores — Jerárquicos Salud
+==========================================
+Auxiliar: ${currentUser}
+Fecha: ${date}
+Tiempo: ${time}
+Puntaje: ${score} pts de ${MAX_SCORE}
+Porcentaje: ${pctNum}%
+Estado: ${passed?'✅ APROBADO':'❌ DESAPROBADO'}
+Correctas: ${correctCount} | Incorrectas: ${wrongCount} | Mejor racha: ${mejorRacha}🔥
+
+DETALLE DE RESPUESTAS:
+${detalle}
+${dataBlock}`
+        );
+
+        window.location.href=`mailto:${ADMIN_MAIL}?subject=${asunto}&body=${cuerpo}`;
+
+        setTimeout(()=>{
+            document.getElementById('mail-sent-badge').style.display='block';
+        },1500);
+    }
+
+    // ── REVISIÓN ───────────────────────────────────────────
+    function showReview(){
+        const list=document.getElementById('review-list');
+        list.innerHTML='';
+        const pctNum=Math.round((score/MAX_SCORE)*100);
+        document.getElementById('review-summary').innerHTML=
+            `<b>${currentUser}</b> &nbsp;|&nbsp; ${score} pts (${pctNum}%) &nbsp;|&nbsp; ✅ ${correctCount} correctas &nbsp; ❌ ${wrongCount} incorrectas`;
+        userAnswers.forEach((ans,i)=>{
+            const div=document.createElement('div');
+            div.className='review-item '+(ans.isRight?'rev-correct':'rev-wrong');
+            div.innerHTML=`
+                <div class="review-q-num">${ans.isRight?'✅':'❌'} Pregunta ${i+1}</div>
+                <div class="review-q-text">${ans.questionText}</div>
+                <div class="review-answer ${ans.isRight?'user-right':'user-wrong'}">${ans.isRight?'✓':'✗'} Tu respuesta: <b>${ans.chosenText}</b></div>
+                ${!ans.isRight?`<div class="review-answer correct-ans">✓ Correcta: <b>${ans.correctText}</b></div>`:''}
+                <div class="review-exp">${ans.exp}</div>`;
+            list.appendChild(div);
+        });
+        showScreen('review-screen');
+    }
+
+    // ── ADMIN ──────────────────────────────────────────────
+    function loginAdmin(){
+        if(document.getElementById('admin-pass').value===ADMIN_PASS){
+            showScreen('admin-panel-screen');
+            switchAdminTab('resultados');
+        }else alert('Contraseña incorrecta');
+    }
+
+    function switchAdminTab(tab){
+        ['resultados','detalle','importar','edit'].forEach(t=>{
+            document.getElementById('admin-'+t).style.display=t===tab?'block':'none';
+            const btn=document.getElementById('tab-btn-'+t);
+            if(btn)btn.classList.toggle('active',t===tab);
+        });
+        if(tab==='resultados')loadRanking();
+        if(tab==='detalle')loadDetailList();
+        if(tab==='edit')loadAdminEditor();
+    }
+
+    function loadRanking(){
+        const results=getResults();
+        const tbody=document.getElementById('ranking-body');
+        tbody.innerHTML='';
+        if(!results.length){
+            tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Sin resultados. Importá mails desde la pestaña Importar.</td></tr>';
+            return;
+        }
+        results.slice().reverse().forEach(r=>{
+            tbody.innerHTML+=`<tr>
+                <td><b>${r.name}</b></td>
+                <td>${r.score}</td>
+                <td>${r.pct}%</td>
+                <td>${r.time}</td>
+                <td>${String(r.date).split(',')[0]}</td>
+                <td><span class="${r.passed?'badge-pass':'badge-fail'}">${r.passed?'APROBADO':'DESAPROBADO'}</span></td>
+            </tr>`;
+        });
+    }
+
+    function loadDetailList(){
+        const results=getResults();
+        const list=document.getElementById('detail-list');
+        list.innerHTML='';
+        if(!results.length){
+            list.innerHTML='<p style="text-align:center;color:#aaa;padding:20px;font-size:0.85rem;">Sin resultados aún</p>';
+            return;
+        }
+        results.slice().reverse().forEach((r,i)=>{
+            const realIdx=results.length-1-i;
+            const div=document.createElement('div');
+            div.style.cssText='border:2px solid #edf2f7;border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:0.2s;background:white;';
+            div.onmouseover=()=>div.style.borderColor='var(--conecta)';
+            div.onmouseout=()=>div.style.borderColor='#edf2f7';
+            div.onclick=()=>openDetailOverlay(realIdx);
+            div.innerHTML=`
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <div>
+                        <div style="font-weight:800;font-size:0.95rem;">${r.name}</div>
+                        <div style="font-size:0.72rem;color:#aaa;font-weight:600;margin-top:2px;">${r.date} · ⏱ ${r.time}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-weight:800;color:var(--conecta);">${r.score} pts (${r.pct}%)</span>
+                        <span class="${r.passed?'badge-pass':'badge-fail'}">${r.passed?'APROBADO':'DESAPROBADO'}</span>
+                        <span style="font-size:0.7rem;color:#aaa;">▶</span>
+                    </div>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+
+    function openDetailOverlay(idx){
+        const r=getResults()[idx];
+        if(!r) return;
+        document.getElementById('detail-overlay-name').innerText=r.name;
+        document.getElementById('detail-overlay-meta').innerHTML=
+            `${r.date} &nbsp;|&nbsp; ⏱ ${r.time} &nbsp;|&nbsp; ${r.score} pts (${r.pct}%) &nbsp;|&nbsp; <span class="${r.passed?'badge-pass':'badge-fail'}">${r.passed?'APROBADO':'DESAPROBADO'}</span>`;
+
+        const content=document.getElementById('detail-overlay-content');
+        content.innerHTML='';
+
+        const corrCount=(r.answers||[]).filter(a=>a.isRight).length;
+        const summary=document.createElement('div');
+        summary.style.cssText='display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;';
+        summary.innerHTML=`
+            <div style="flex:1;min-width:80px;background:#f5fff8;border:1px solid var(--success);border-radius:12px;padding:10px;text-align:center;">
+                <div style="font-size:1.4rem;font-weight:800;color:var(--success);">${corrCount}</div>
+                <div style="font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;">Correctas</div>
+            </div>
+            <div style="flex:1;min-width:80px;background:#fff5f5;border:1px solid var(--danger);border-radius:12px;padding:10px;text-align:center;">
+                <div style="font-size:1.4rem;font-weight:800;color:var(--danger);">${(r.answers||[]).length-corrCount}</div>
+                <div style="font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;">Incorrectas</div>
+            </div>
+            <div style="flex:1;min-width:80px;background:#f8f0ff;border:1px solid var(--conecta);border-radius:12px;padding:10px;text-align:center;">
+                <div style="font-size:1.4rem;font-weight:800;color:var(--conecta);">${r.pct}%</div>
+                <div style="font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;">Porcentaje</div>
+            </div>`;
+        content.appendChild(summary);
+
+        (r.answers||[]).forEach((ans,i)=>{
+            const div=document.createElement('div');
+            div.className='review-item '+(ans.isRight?'rev-correct':'rev-wrong');
+            div.style.marginBottom='10px';
+            div.innerHTML=`
+                <div class="review-q-num">${ans.isRight?'✅':'❌'} Pregunta ${i+1}</div>
+                <div class="review-q-text">${ans.questionText}</div>
+                <div class="review-answer ${ans.isRight?'user-right':'user-wrong'}">${ans.isRight?'✓':'✗'} Respondió: <b>${ans.chosenText}</b></div>
+                ${!ans.isRight?`<div class="review-answer correct-ans">✓ Correcta: <b>${ans.correctText}</b></div>`:''}
+                <div class="review-exp">${ans.exp}</div>`;
+            content.appendChild(div);
+        });
+
+        document.getElementById('attempt-detail-overlay').style.display='flex';
+    }
+
+    function closeDetailOverlay(){document.getElementById('attempt-detail-overlay').style.display='none';}
+    document.getElementById('attempt-detail-overlay').addEventListener('click',function(e){if(e.target===this)closeDetailOverlay();});
+
+    function printDetail(){window.print();}
+
+    // ── IMPORTADOR DE MAILS ────────────────────────────────
+    function importarMail(){
+        const text=document.getElementById('import-textarea').value;
+        const fb=document.getElementById('import-feedback');
+
+        const start=text.indexOf('===RESULTADO_JS_EXAM===');
+        const end=text.indexOf('===FIN_RESULTADO===');
+
+        if(start===-1||end===-1){
+            fb.style.display='block';
+            fb.style.background='#fdeaea';
+            fb.style.color='var(--fail)';
+            fb.style.border='2px solid var(--danger)';
+            fb.textContent='⚠️ No se encontró un resultado válido en el texto. Asegurate de copiar el mail completo.';
+            return;
+        }
+
+        try{
+            const jsonStr=text.substring(start+23,end).trim();
+            const data=JSON.parse(jsonStr);
+
+            // Verificar duplicado
+            const results=getResults();
+            const isDup=results.some(r=>r.name===data.name&&r.date===data.date);
+            if(isDup){
+                fb.style.display='block';
+                fb.style.background='#fff8e1';
+                fb.style.color='#e65100';
+                fb.style.border='2px solid #ffc107';
+                fb.textContent='⚠️ Este resultado ya fue importado anteriormente.';
+                return;
+            }
+
+            results.push(data);
+            setResults(results);
+            document.getElementById('import-textarea').value='';
+
+            fb.style.display='block';
+            fb.style.background='#e8f5e9';
+            fb.style.color='var(--pass)';
+            fb.style.border='2px solid var(--success)';
+            fb.textContent=`✅ Resultado de ${data.name} importado correctamente (${data.pct}% — ${data.passed?'APROBADO':'DESAPROBADO'})`;
+
+            showToast('✅ Resultado importado');
+        }catch(e){
+            fb.style.display='block';
+            fb.style.background='#fdeaea';
+            fb.style.color='var(--fail)';
+            fb.style.border='2px solid var(--danger)';
+            fb.textContent='❌ Error al leer el resultado: '+e.message;
+        }
+    }
+
+    // ── EXPORTAR CSV ───────────────────────────────────────
+    function exportCSV(){
+        const results=getResults();
+        if(!results.length){alert('No hay resultados para exportar');return;}
+        let csv='\uFEFFNombre;Puntaje;Porcentaje;Estado;Correctas;Incorrectas;Racha;Tiempo;Fecha\n';
+        results.forEach(r=>{
+            csv+=`${r.name};${r.score};${r.pct}%;${r.passed?'APROBADO':'DESAPROBADO'};${r.correct};${r.wrong};${r.streak};${r.time};${r.date}\n`;
+        });
+        const link=document.createElement('a');
+        link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+        link.setAttribute('download',`Examen_Prestadores_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.csv`);
+        document.body.appendChild(link);link.click();document.body.removeChild(link);
+    }
+
+    // ── EXPORTAR PDF ───────────────────────────────────────
+    function exportPDF(){
+        const results=getResults();
+        if(!results.length){alert('No hay resultados para exportar');return;}
+
+        const w=window.open('','_blank');
+        const date=new Date().toLocaleDateString('es-AR');
+
+        let rows='';
+        results.forEach((r,i)=>{
+            const passColor=r.passed?'#1a7f3c':'#c0392b';
+            const passBg=r.passed?'#dff6e8':'#fdeaea';
+            rows+=`<tr style="background:${i%2===0?'white':'#f8fafc'}">
+                <td>${r.name}</td>
+                <td style="text-align:center;">${r.score}</td>
+                <td style="text-align:center;">${r.pct}%</td>
+                <td style="text-align:center;">${r.correct}</td>
+                <td style="text-align:center;">${r.wrong}</td>
+                <td style="text-align:center;">${r.time}</td>
+                <td style="text-align:center;">${String(r.date).split(',')[0]}</td>
+                <td style="text-align:center;"><span style="background:${passBg};color:${passColor};padding:3px 10px;border-radius:6px;font-weight:800;font-size:0.8rem;">${r.passed?'APROBADO':'DESAPROBADO'}</span></td>
+            </tr>`;
+        });
+
+        const aprobados=results.filter(r=>r.passed).length;
+        const promedio=results.length?Math.round(results.reduce((a,r)=>a+r.pct,0)/results.length):0;
+
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>Resultados Examen Prestadores JS</title>
+        <style>
+            body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:30px;color:#2c3e50;background:white;}
+            .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:20px;border-bottom:3px solid #00554e;}
+            .header h1{color:#00554e;font-size:1.4rem;margin:0;}
+            .header p{color:#6b7c8f;font-size:0.8rem;margin:4px 0 0;}
+            .stats{display:flex;gap:16px;margin-bottom:24px;}
+            .stat-box{flex:1;background:#f4f7f9;border-radius:12px;padding:14px;text-align:center;}
+            .stat-box .val{font-size:1.6rem;font-weight:800;color:#00554e;}
+            .stat-box .lbl{font-size:0.65rem;text-transform:uppercase;color:#aaa;font-weight:700;margin-top:2px;}
+            table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+            th{background:#4a537d;color:white;padding:10px 12px;text-align:left;}
+            td{padding:9px 12px;border-bottom:1px solid #edf2f7;}
+            .footer{margin-top:20px;font-size:0.72rem;color:#aaa;text-align:center;}
+            @media print{body{padding:15px;}}
+        </style></head><body>
+        <div class="header">
+            <div>
+                <h1>📋 Resultados — Examen de Prestadores</h1>
+                <p>Jerárquicos Salud &nbsp;·&nbsp; Generado: ${date} &nbsp;·&nbsp; Total: ${results.length} auxiliares</p>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-box"><div class="val">${results.length}</div><div class="lbl">Total</div></div>
+            <div class="stat-box"><div class="val" style="color:#1a7f3c;">${aprobados}</div><div class="lbl">Aprobados</div></div>
+            <div class="stat-box"><div class="val" style="color:#c0392b;">${results.length-aprobados}</div><div class="lbl">Desaprobados</div></div>
+            <div class="stat-box"><div class="val">${promedio}%</div><div class="lbl">Promedio</div></div>
+        </div>
+        <table>
+            <thead><tr><th>Nombre</th><th>Puntos</th><th>%</th><th>Correctas</th><th>Incorrectas</th><th>Tiempo</th><th>Fecha</th><th>Estado</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div class="footer">Examen de Prestadores — Jerárquicos Salud · ${date}</div>
+        <script>window.onload=()=>{window.print();}<\/script>
+        </body></html>`);
+        w.document.close();
+    }
+
+    function clearAll(){
+        if(confirm('¿Borrar todos los resultados? Esta acción no se puede deshacer.'))
+            {setResults([]);loadRanking();loadDetailList();showToast('Resultados eliminados');}
+    }
+
+    // ── EDITOR DE PREGUNTAS ────────────────────────────────
+    function loadAdminEditor(){
+        const list=document.getElementById('questions-editor-list');
+        list.innerHTML='';
+        document.getElementById('editor-meta').textContent=`Total: ${currentQuestions.length} preguntas`;
+        currentQuestions.forEach((q,i)=>renderEditItem(q,i));
+        currentQuestions.forEach((q,i)=>highlightCorrectRow(i,q.correct));
+    }
+
+    function renderEditItem(q,i){
+        const list=document.getElementById('questions-editor-list');
+        const div=document.createElement('div');
+        div.className='q-edit-item';div.id=`qitem-${i}`;
+        const optsHTML=q.options.map((opt,oi)=>`
+            <div class="option-edit-row" id="opt-row-${i}-${oi}">
+                <button class="correct-btn ${q.correct===oi?'active':''}" onclick="updateCorrect(${i},${oi})">✓</button>
+                <input type="text" value="${opt.replace(/"/g,'&quot;').replace(/</g,'&lt;')}" oninput="updateOption(${i},${oi},this.value)">
+            </div>`).join('');
+        div.innerHTML=`
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <small style="color:var(--conecta);font-weight:800">Pregunta ${i+1}</small>
+                <button class="btn-danger btn-sm" style="width:auto;padding:5px 12px;font-size:0.7rem;margin:0" onclick="deleteQuestion(${i})">✕</button>
+            </div>
+            <textarea oninput="updateQ(${i},'q',this.value)">${q.q.replace(/</g,'&lt;')}</textarea>
+            <div class="options-edit-label">Opciones <span>✓ = Correcta</span></div>
+            <div class="options-editor" id="opts-${i}">${optsHTML}</div>
+            <small style="color:var(--elite);font-weight:700">Explicación</small>
+            <textarea oninput="updateQ(${i},'exp',this.value)">${(q.exp||'').replace(/</g,'&lt;')}</textarea>`;
+        list.appendChild(div);
+    }
+
+    function highlightCorrectRow(qIdx,co){
+        const q=currentQuestions[qIdx];if(!q)return;
+        for(let oi=0;oi<q.options.length;oi++){
+            const row=document.getElementById(`opt-row-${qIdx}-${oi}`);
+            const btn=row?row.querySelector('.correct-btn'):null;
+            if(row)row.classList.toggle('is-correct',oi===co);
+            if(btn)btn.classList.toggle('active',oi===co);
+        }
+    }
+
+    function updateQ(i,f,v){currentQuestions[i][f]=v;}
+    function updateOption(i,oi,v){currentQuestions[i].options[oi]=v;}
+    function updateCorrect(i,oi){currentQuestions[i].correct=oi;highlightCorrectRow(i,oi);}
+    function addQuestion(){
+        currentQuestions.push({q:'Nueva pregunta',options:['Opción A','Opción B','Opción C'],correct:0,exp:'Explicación.'});
+        const ni=currentQuestions.length-1;
+        renderEditItem(currentQuestions[ni],ni);highlightCorrectRow(ni,0);
+        document.getElementById('editor-meta').textContent=`Total: ${currentQuestions.length} preguntas`;
+        document.getElementById(`qitem-${ni}`).scrollIntoView({behavior:'smooth'});
+    }
+    function deleteQuestion(i){
+        if(!confirm(`¿Eliminar la pregunta ${i+1}?`))return;
+        currentQuestions.splice(i,1);loadAdminEditor();
+    }
+    function saveQuestionsLocal(){
+        try{
+            localStorage.setItem(STORAGE_Q,JSON.stringify(currentQuestions));
+            document.getElementById('editor-meta').textContent=`✅ ${currentQuestions.length} preguntas guardadas`;
+            showToast('✅ Preguntas guardadas');
+        }catch(e){alert('Error al guardar: '+e.message);}
+    }
+    function resetQuestions(){
+        if(!confirm('¿Restaurar preguntas originales?'))return;
+        currentQuestions=JSON.parse(JSON.stringify(initialQuestions));
+        try{localStorage.removeItem(STORAGE_Q);}catch(e){}
+        loadAdminEditor();
+    }
+
+    // ── DESCARGAR HTML ACTUALIZADO ─────────────────────────
+    function downloadUpdatedHTML(){
+        // Toma el HTML actual, reemplaza las preguntas embebidas con las editadas
+        const src=document.documentElement.outerHTML;
+        const marker='const initialQuestions = [';
+        const start=src.indexOf(marker);
+        const end=src.indexOf('];',start)+2;
+        if(start===-1){alert('No se pudo localizar el bloque de preguntas');return;}
+        const newQ='const initialQuestions = '+JSON.stringify(currentQuestions,null,2)+';';
+        const updated=src.substring(0,start)+newQ+src.substring(end);
+        const blob=new Blob([updated],{type:'text/html;charset=utf-8'});
+        const link=document.createElement('a');
+        link.href=URL.createObjectURL(blob);
+        link.download='Quizz_Prestadores_actualizado.html';
+        document.body.appendChild(link);link.click();document.body.removeChild(link);
+        showToast('✅ HTML descargado con preguntas actualizadas');
+    }
+
+    init();
+</script>
+</body>
+</html>
