@@ -607,7 +607,7 @@ td.feriado-col { background: #fffbeb; }
       <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#6ee7b7;display:inline-block;"></span>
       <span id="sync-text">Sincronizado</span>
     </span>
-    <button class="btn btn-green" onclick="exportCSV()">↓ Exportar CSV</button>
+    <button class="btn btn-green" onclick="exportCSV()">📄 Exportar PDF</button>
     <button class="btn btn-primary" onclick="window.print()">⎙ Imprimir</button>
   </div>
 </header>
@@ -832,23 +832,16 @@ const DUPLAS_BASE = [
 // Más simple: para mes offset M, la posición P tiene la dupla índice (P + M) % 6
 
 function getDuplasForMonth(year, month) {
-  // Offset respecto a Julio 2026 (mes 6)
-  const julioRef = (2026 - year) * 12 + 6; 
-  const offset   = ((month - 6) - (year - 2026) * 12); // meses desde Julio
-  // Normalizar offset (puede ser negativo si el mes es antes de Julio)
+  // Offset: meses desde Julio 2026
+  const offset = ((month - 6) - (year - 2026) * 12);
   const off = ((offset % 6) + 6) % 6;
 
-  // Para cada posición (0=07-15, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie)
-  // La dupla asignada es DUPLAS_BASE[(posición + off) % 6]
-  // off=0 → Julio, off=1 → Agosto, etc.
-  
-  // Retorna: { '07-15': [sup1, sup2], 1: [sup1, sup2], 2: ..., 3:..., 4:..., 5:... }
+  // Rotación correcta: Vie→07-15, 07-15→Lun, Lun→Mar...
+  // Cada mes la dupla de posición P es DUPLAS_BASE[(P - off + 6) % 6]
   const result = {};
-  // Posición 0 → 07-15 (sin guardia en sala, hace más tareas)
-  result['0715'] = DUPLAS_BASE[(0 + off) % 6];
-  // Posiciones 1-5 → Lun-Vie (guardia en sala)
+  result['0715'] = DUPLAS_BASE[((0 - off) % 6 + 6) % 6];
   for (let dow = 1; dow <= 5; dow++) {
-    result[dow] = DUPLAS_BASE[(dow + off) % 6];
+    result[dow] = DUPLAS_BASE[((dow - off) % 6 + 6) % 6];
   }
   return result;
 }
@@ -1618,23 +1611,150 @@ async function clearOverride() {
 // EXPORT CSV
 // ═══════════════════════════════════════════
 function exportCSV() {
-  const work = getWorkDays(currentYear, currentMonth);
-  const header = ['Supervisor', ...work.map(d => fmtDate(d))].join(',');
-  const rows = SUPERVISORS.map(sup => {
-    const cells = work.map(d => {
-      const r = getRole(sup, d);
-      return r ? `"${r.label}"` : '""';
-    });
-    return [`"${sup}"`, ...cells].join(',');
+  const work = getWorkDays(currentYear, currentMonth).filter(d => !isHoliday(d));
+  const mes  = MESES[currentMonth];
+
+  const ROLE_COLORS = {
+    'guardia-a': { bg:'#dbeafe', fg:'#1e3a8a' },
+    'guardia-b': { bg:'#bfdbfe', fg:'#1e3a8a' },
+    'bandeja':   { bg:'#d1fae5', fg:'#064e3b' },
+    'kh':        { bg:'#ede9fe', fg:'#3b0764' },
+    'entrena':   { bg:'#fce7f3', fg:'#831843' },
+    'r7076':     { bg:'#e0f2fe', fg:'#075985' },
+    'solo7076':  { bg:'#bae6fd', fg:'#0c4a6e' },
+    'des7076':   { bg:'#fef9c3', fg:'#713f12' },
+    'r7076des':  { bg:'#fde68a', fg:'#92400e' },
+    'licencia':  { bg:'#f1f5f9', fg:'#64748b' },
+  };
+  const diasNombre = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  // Agrupar por semana
+  const semanas = [];
+  let semActual = [];
+  work.forEach(d => {
+    if (d.getDay() === 1 && semActual.length > 0) { semanas.push(semActual); semActual = []; }
+    semActual.push(d);
   });
-  const csv = [header, ...rows].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  if (semActual.length) semanas.push(semActual);
+
+  // Tabla por semana
+  let tablaHTML = '';
+  semanas.forEach((sem, si) => {
+    tablaHTML += `
+      <div class="sem-titulo">Semana ${si+1} &nbsp;·&nbsp; ${sem[0].getDate()} al ${sem[sem.length-1].getDate()} de ${mes}</div>
+      <table>
+        <thead><tr>
+          <th class="col-sup">Supervisor</th>
+          ${sem.map(d=>`<th>${diasNombre[d.getDay()]}<br><b>${d.getDate()}</b></th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${SUPERVISORS.map((sup,si2)=>{
+            const ini = sup.split(' ').map(p=>p[0]).slice(0,2).join('');
+            return `<tr class="${si2%2===0?'ev':'od'}">
+              <td class="col-sup"><span class="av">${ini}</span>${sup}</td>
+              ${sem.map(d=>{
+                const r = getRole(sup,d);
+                if (!r) return '<td><span class="dash">—</span></td>';
+                const c = ROLE_COLORS[r.id]||{bg:'#f1f5f9',fg:'#334155'};
+                return `<td><span class="chip" style="background:${c.bg};color:${c.fg}">${r.label}</span></td>`;
+              }).join('')}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  });
+
+  // Leyenda
+  const legHTML = ROLES.filter(r=>r.id!=='licencia').map(r=>{
+    const c = ROLE_COLORS[r.id]||{bg:'#f1f5f9',fg:'#334155'};
+    return `<span class="leg" style="background:${c.bg};color:${c.fg}">${r.label}</span>`;
+  }).join('');
+
+  // Duplas
+  const duplas = getDuplasForMonth(currentYear, currentMonth);
+  const dupHTML = [
+    {l:'07-15 hs', s:duplas['0715']},
+    {l:'Lunes',    s:duplas[1]},
+    {l:'Martes',   s:duplas[2]},
+    {l:'Miércoles',s:duplas[3]},
+    {l:'Jueves',   s:duplas[4]},
+    {l:'Viernes',  s:duplas[5]},
+  ].map(d=>`<div class="dup"><b>${d.l}:</b> ${d.s.map(x=>x.split(' ')[0]).join(' + ')}</div>`).join('');
+
+  const html = `<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Rotacion ${mes} ${currentYear}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter','Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:20px;font-size:11px;}
+.page{max-width:1050px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,#1e3a8a,#3b5bdb);border-radius:14px;padding:18px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.hdr h1{color:white;font-size:17px;font-weight:800;margin-bottom:2px;}
+.hdr p{color:rgba(255,255,255,.7);font-size:10px;}
+.hdr-r{text-align:right;color:white;font-weight:700;font-size:12px;}
+.hdr-r small{display:block;color:rgba(255,255,255,.6);font-size:9px;font-weight:400;margin-top:2px;}
+.dup-card{background:white;border-radius:10px;padding:10px 16px;margin-bottom:14px;border:1px solid #e2e8f0;display:flex;flex-wrap:wrap;gap:6px 18px;}
+.dup-title{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:100%;margin-bottom:2px;}
+.dup{font-size:10px;color:#334155;}
+.dup b{color:#1e3a8a;margin-right:3px;}
+.sem-titulo{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px;border-left:3px solid #3b5bdb;padding-left:8px;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:6px;border:1px solid #e2e8f0;}
+thead th{background:#f1f5f9;color:#64748b;font-size:9px;font-weight:700;text-transform:uppercase;padding:7px 5px;text-align:center;border-bottom:2px solid #e2e8f0;line-height:1.5;}
+thead th.col-sup{text-align:left;padding-left:12px;min-width:140px;}
+thead th b{font-size:12px;color:#1e293b;display:block;}
+tbody td{padding:5px 4px;text-align:center;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+tbody td.col-sup{text-align:left;padding:6px 12px;font-weight:600;font-size:10px;white-space:nowrap;}
+tr.ev td{background:white;}
+tr.od td{background:#fafbfc;}
+.av{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#dbeafe;color:#1e3a8a;font-size:7px;font-weight:800;align-items:center;justify-content:center;margin-right:5px;vertical-align:middle;flex-shrink:0;}
+.chip{display:inline-block;padding:3px 6px;border-radius:5px;font-size:9px;font-weight:600;white-space:nowrap;line-height:1.3;}
+.dash{color:#cbd5e1;font-size:13px;}
+.leg-card{background:white;border-radius:10px;padding:10px 14px;margin-top:14px;border:1px solid #e2e8f0;}
+.leg-title{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.leg-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.leg{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:600;}
+.footer{text-align:center;color:#94a3b8;font-size:9px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;}
+.print-btn{text-align:center;margin:16px 0 4px;}
+.print-btn button{background:#1e3a8a;color:white;border:none;border-radius:8px;padding:9px 24px;font-size:12px;font-weight:700;cursor:pointer;}
+@media print{
+  body{background:white;padding:10px;}
+  .print-btn{display:none;}
+  .chip{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .av{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  table{page-break-inside:avoid;}
+  @page{size:A4 landscape;margin:10mm;}
+}
+</style></head><body>
+<div class="page">
+  <div class="hdr">
+    <div><h1>Rotación de Tareas Mensuales</h1><p>Jerárquicos Salud · Supervisores</p></div>
+    <div class="hdr-r">${mes} ${currentYear}<small>Generado el ${new Date().toLocaleDateString('es-AR')}</small></div>
+  </div>
+  <div class="dup-card">
+    <div class="dup-title">Duplas del mes</div>
+    ${dupHTML}
+  </div>
+  ${tablaHTML}
+  <div class="leg-card">
+    <div class="leg-title">Referencias</div>
+    <div class="leg-wrap">${legHTML}</div>
+  </div>
+  <div class="print-btn"><button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button></div>
+  <div class="footer">Jerárquicos Salud · Rotación de Supervisores · ${mes} ${currentYear}</div>
+</div>
+</body></html>`;
+
+  // Abrir como blob — evita popup blocker y funciona siempre
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
-  a.download = `rotacion_supervisores_${MESES[currentMonth]}_${currentYear}.csv`;
+  a.target = '_blank';
+  a.rel = 'noopener';
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // ═══════════════════════════════════════════
